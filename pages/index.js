@@ -3,26 +3,62 @@ import Image from "next/image";
 import { useTheme } from "next-themes";
 
 import { NFTContext } from "../context/NFTContext";
-import { Banner, CreatorCard, NFTCard } from "../components";
+import { Banner, CreatorCard, NFTCard, SearchBar } from "../components";
 import images from "../assets";
 import { makeId } from "../utils/makeId";
 
 const Home = () => {
   const { fetchNFTs } = useContext(NFTContext);
   const [hideButtons, setHideButtons] = useState(false);
+  const [activeSelect, setActiveSelect] = useState("Recently Added");
   const [nfts, setNfts] = useState([]);
   const { theme } = useTheme();
   const parentRef = useRef(null);
   const scrollRef = useRef(null);
 
+  // useEffect(() => {
+  //   fetchNFTs().then((items) => {
+  //     setNfts(items);
+  //     console.log(items);
+  //   });
+  // }, []);
+
   useEffect(() => {
-    fetchNFTs().then((items) => {
-      setNfts(items);
-      console.log(items);
-    });
-    // const data = await fetchNFTs();
-    // console.log(data);
-  }, []);
+    const sortedNfts = [...nfts];
+
+    switch (activeSelect) {
+      case "Price (low to high)":
+        setNfts(sortedNfts.sort((a, b) => a.price - b.price));
+        break;
+      case "Price (high to low)":
+        setNfts(sortedNfts.sort((a, b) => b.price - a.price));
+        break;
+      case "Recently added":
+        setNfts(sortedNfts.sort((a, b) => b.tokenId - a.tokenId));
+        break;
+      default:
+        setNfts(nfts);
+        break;
+    }
+  }, [activeSelect]);
+
+  const onHandleSearch = (value) => {
+    const filteredNfts = nfts.filter(({ name }) =>
+      name.toLowerCase().includes(value.toLowerCase())
+    );
+
+    if (filteredNfts.length === 0) {
+      setNfts(nftsCopy);
+    } else {
+      setNfts(filteredNfts);
+    }
+  };
+
+  const onClearSearch = () => {
+    if (nfts.length && nftsCopy.length) {
+      setNfts(nftsCopy);
+    }
+  };
 
   const handleScroll = (direction) => {
     const { current } = scrollRef;
@@ -119,7 +155,14 @@ const Home = () => {
             <h1 className="flex-1 font-poppings dark:text-white text-nft-black-1 text-2xl minlg:text-4xl font-semibold sm:mb-4">
               Hot Bids
             </h1>
-            <div>SearchBar</div>
+            <div className="flex-2 sm:w-full flex flex-row sm:flex-col">
+              <SearchBar
+                activeSelect={activeSelect}
+                setActiveSelect={setActiveSelect}
+                handleSearch={onHandleSearch}
+                clearSearch={onClearSearch}
+              />
+            </div>
           </div>
 
           <div className="mt-3 w-full flex flex-wrap justify-start md:justify-center">
